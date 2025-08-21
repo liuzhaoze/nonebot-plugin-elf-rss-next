@@ -1,0 +1,10 @@
+[project]
+name = "nonebot-plugin-elf-rss-next"
+version = "0.1.0"
+description = "RSS订阅机器人“ELF_RSS”的独立插件版本"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "nonebot-adapter-onebot>=2.4.6",
+    "nonebot2>=2.4.3",
+]
