@@ -1,5 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, HttpUrl
+
+
+class ScopedConfig(BaseModel):
+    rsshub_url: HttpUrl = "https://rsshub.app"
 
 
 class Config(BaseModel):
-    pass
+    elf_rss: ScopedConfig = Field(default_factory=ScopedConfig)

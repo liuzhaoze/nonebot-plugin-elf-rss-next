@@ -1,10 +1,12 @@
 {
     "cSpell.words": [
+        "asyncache",
         "localstore",
         "metaevent",
         "nonebot",
         "onebot",
         "pikpak",
+        "rsshub",
         "tinydb"
     ]
 }

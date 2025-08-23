@@ -21,7 +21,7 @@ __plugin_meta__ = PluginMetadata(
 )
 
 global_config = nonebot.get_driver().config
-plugin_config = nonebot.get_plugin_config(Config)
+plugin_config = nonebot.get_plugin_config(Config).elf_rss
 
 startup = on_metaevent(temp=True)
 
@@ -35,11 +35,11 @@ async def startup_handler(bot: Bot):
     if len(rss_list) == 0:
         msg = "尚无订阅数据，配置和使用方法参照: TODO:"
         logger.warning(msg)
-        await send_msg_to_superusers(bot, global_config.superusers, f"ELF_RSS: {msg}")
+        await send_msg_to_superusers(bot, global_config.superusers, msg)
     else:
         msg = f"已加载 {len(rss_list)} 项订阅数据"
         logger.info(msg)
-        await send_msg_to_superusers(bot, global_config.superusers, f"ELF_RSS: {msg}")
+        await send_msg_to_superusers(bot, global_config.superusers, msg)
 
     logger.info("启动检查订阅更新定时任务")
     await asyncio.gather(
