@@ -19,8 +19,6 @@ class RSS:
     user_id: list[str] = field(default_factory=list)
     # 订阅群组
     group_id: list[str] = field(default_factory=list)
-    # 订阅子频道
-    guild_channel_id: list[str] = field(default_factory=list)
     # 是否使用图片代理
     img_proxy: bool = False
     # 更新频率 (分钟/次)

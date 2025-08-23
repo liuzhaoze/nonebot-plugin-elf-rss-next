@@ -29,8 +29,8 @@ async def create_rss_update_job(rss: RSS):
     if scheduler.get_job(rss.name):
         scheduler.remove_job(rss.name)
 
-    # 确保用户、群组、频道三个订阅目标至少有一个
-    if not any([rss.user_id, rss.group_id, rss.guild_channel_id]):
+    # 确保用户、群组两个订阅目标至少有一个
+    if not any([rss.user_id, rss.group_id]):
         logger.warning(f"RSS订阅 {rss.name} 没有有效的订阅目标，跳过创建任务")
         return
 
