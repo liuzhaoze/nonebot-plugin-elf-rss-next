@@ -8,6 +8,8 @@ from tinydb import TinyDB
 require("nonebot_plugin_localstore")
 import nonebot_plugin_localstore as store
 
+DB_FILE = store.get_plugin_data_file("rss_data.json")
+
 
 @dataclass
 class RSS:
@@ -65,14 +67,14 @@ class RSS:
     send_merged_msg: bool = False
 
     @staticmethod
-    def load_rss_data(file_path: Path) -> list["RSS"]:
-        """加载RSS数据"""
+    def load_rss_data() -> list["RSS"]:
+        """加载全部RSS数据"""
 
-        if not file_path.exists():
+        if not DB_FILE.exists():
             return []
 
         with TinyDB(
-            file_path, encoding="utf-8", sort_keys=True, indent=4, ensure_ascii=False
+            DB_FILE, encoding="utf-8", sort_keys=True, indent=4, ensure_ascii=False
         ) as db:
             rss_list = [RSS(**item) for item in db.all()]
             return rss_list

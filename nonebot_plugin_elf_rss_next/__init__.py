@@ -1,15 +1,12 @@
 import asyncio
 
 import nonebot
-from nonebot import logger, on_metaevent, require
+from nonebot import logger, on_metaevent
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.plugin import PluginMetadata
 
-require("nonebot_plugin_localstore")
-import nonebot_plugin_localstore as store
-
 from .config import Config
-from .rss import RSS
+from .rss import DB_FILE, RSS
 from .scheduler import create_rss_update_job
 from .utils import send_msg_to_superusers
 
@@ -32,11 +29,8 @@ startup = on_metaevent(temp=True)
 @startup.handle()
 async def startup_handler(bot: Bot):
     """初始化"""
-    logger.info(f"RSS数据目录: {store.get_plugin_data_dir()}")
-
-    rss_data_file = store.get_plugin_data_file("rss_data.json")
-    logger.info(f"加载RSS数据文件: {rss_data_file}")
-    rss_list = RSS.load_rss_data(rss_data_file)
+    logger.info(f"加载RSS数据文件: {DB_FILE}")
+    rss_list = RSS.load_rss_data()
 
     if len(rss_list) == 0:
         msg = "尚无订阅数据，配置和使用方法参照: TODO:"
