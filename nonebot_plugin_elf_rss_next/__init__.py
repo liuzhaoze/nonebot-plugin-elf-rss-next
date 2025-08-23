@@ -1,11 +1,11 @@
 import asyncio
 
-import nonebot
 from nonebot import logger, on_metaevent
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.plugin import PluginMetadata
 
 from .config import Config
+from .globals import global_config
 from .rss import DB_FILE, RSS
 from .scheduler import create_rss_update_job
 from .utils import send_msg_to_superusers
@@ -19,9 +19,6 @@ __plugin_meta__ = PluginMetadata(
     config=Config,
     supported_adapters={"~onebot.v11"},
 )
-
-global_config = nonebot.get_driver().config
-plugin_config = nonebot.get_plugin_config(Config).elf_rss
 
 startup = on_metaevent(temp=True)
 

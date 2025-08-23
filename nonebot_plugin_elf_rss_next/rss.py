@@ -13,7 +13,7 @@ from nonebot_plugin_apscheduler import scheduler
 require("nonebot_plugin_localstore")
 import nonebot_plugin_localstore as store
 
-from . import global_config, plugin_config
+from .globals import global_config, plugin_config
 from .utils import filter_valid_group_id, filter_valid_user_id, send_msg_to_superusers
 
 DB_FILE = store.get_plugin_data_file("rss_data.json")
