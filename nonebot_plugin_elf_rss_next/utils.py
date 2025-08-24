@@ -1,7 +1,18 @@
+import hashlib
+from typing import Any, Optional
+
 from asyncache import cached
 from cachetools import TTLCache
 from nonebot import logger
 from nonebot.adapters.onebot.v11 import Bot
+
+from .globals import plugin_config
+
+
+def get_proxy(use_proxy: bool) -> Optional[str]:
+    if not use_proxy or not plugin_config.proxy:
+        return None
+    return str(plugin_config.proxy)
 
 
 async def send_msg_to_superusers(bot: Bot, superusers: set[str], msg: str):
@@ -46,3 +57,17 @@ async def filter_valid_group_id(bot: Bot, group_ids: set[int]) -> set[int]:
             f"机器人 {bot.self_id} 未加入群组 {', '.join(map(str, invalid))}"
         )
     return valid
+
+
+def filter_entry_fields(entry: dict[str, Any]) -> dict[str, Any]:
+    """过滤RSS条目中需要的字段"""
+    wanted = ["guid", "title", "link", "published", "updated", "hash"]
+    if entry.get("to_send"):
+        wanted += ["to_send", "content", "summary"]
+    return {k: v for k in wanted if (v := entry.get(k))}
+
+
+def get_entry_hash(entry: dict[str, Any]) -> str:
+    """计算RSS条目的哈希值"""
+    unique_str = str(entry.get("guid", entry.get("link", "")))
+    return hashlib.md5(unique_str.encode("utf-8")).hexdigest()
