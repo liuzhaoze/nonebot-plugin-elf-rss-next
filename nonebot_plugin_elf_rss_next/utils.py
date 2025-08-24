@@ -37,8 +37,8 @@ async def get_bot_group_id_list(bot: Bot) -> set[int]:
     return {group["group_id"] for group in groups}
 
 
-async def filter_valid_user_id(bot: Bot, user_ids: set[int]) -> set[int]:
-    """过滤出有效的用户ID"""
+async def extract_valid_user_id(bot: Bot, user_ids: set[int]) -> set[int]:
+    """提取有效的用户ID"""
     bot_users = await get_bot_friend_id_list(bot)
     valid, invalid = user_ids & bot_users, user_ids - bot_users
     if invalid:
@@ -48,8 +48,8 @@ async def filter_valid_user_id(bot: Bot, user_ids: set[int]) -> set[int]:
     return valid
 
 
-async def filter_valid_group_id(bot: Bot, group_ids: set[int]) -> set[int]:
-    """过滤出有效的群组ID"""
+async def extract_valid_group_id(bot: Bot, group_ids: set[int]) -> set[int]:
+    """提取有效的群组ID"""
     bot_groups = await get_bot_group_id_list(bot)
     valid, invalid = group_ids & bot_groups, group_ids - bot_groups
     if invalid:
@@ -59,8 +59,8 @@ async def filter_valid_group_id(bot: Bot, group_ids: set[int]) -> set[int]:
     return valid
 
 
-def filter_entry_fields(entry: dict[str, Any]) -> dict[str, Any]:
-    """过滤RSS条目中需要的字段"""
+def extract_entry_fields(entry: dict[str, Any]) -> dict[str, Any]:
+    """提取RSS条目中需要的字段"""
     wanted = ["guid", "title", "link", "published", "updated", "hash"]
     if entry.get("to_send"):
         wanted += ["to_send", "content", "summary"]

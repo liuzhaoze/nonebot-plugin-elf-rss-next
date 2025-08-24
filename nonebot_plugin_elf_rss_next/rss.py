@@ -18,9 +18,9 @@ import nonebot_plugin_localstore as store
 
 from .globals import global_config, plugin_config
 from .utils import (
-    filter_entry_fields,
-    filter_valid_group_id,
-    filter_valid_user_id,
+    extract_entry_fields,
+    extract_valid_group_id,
+    extract_valid_user_id,
     get_entry_hash,
     get_proxy,
     send_msg_to_superusers,
@@ -140,17 +140,17 @@ class RSS:
             route = str(self.url).lstrip("/")
             return f"{base}/{route}"
 
-    async def filter_valid_subscribers(self, bot: Bot):
+    async def extract_valid_subscribers(self, bot: Bot):
         if self.user_id:
-            self.user_id = await filter_valid_user_id(bot, self.user_id)
+            self.user_id = await extract_valid_user_id(bot, self.user_id)
         if self.group_id:
-            self.group_id = await filter_valid_group_id(bot, self.group_id)
+            self.group_id = await extract_valid_group_id(bot, self.group_id)
 
     async def update(self):
         bot = get_bot()
 
         # 检查订阅者是否合法
-        await self.filter_valid_subscribers(bot)
+        await self.extract_valid_subscribers(bot)
         if not any([self.user_id, self.group_id]):
             await self.stop_update_and_notify(bot, reason="当前没有用户或群组订阅该RSS")
             return
@@ -196,7 +196,7 @@ class RSS:
 
         if initial_fetch:
             # 首次抓取成功，保存数据但不发送消息
-            entries = [filter_entry_fields(entry) for entry in data["entries"]]
+            entries = [extract_entry_fields(entry) for entry in data["entries"]]
             for entry in entries:
                 entry["hash"] = get_entry_hash(entry)
 
