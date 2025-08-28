@@ -24,29 +24,31 @@ class Context:
     # 消息发送失败计数
     msg_error_count: int = 0
     # 消息标题
-    msg_header: str = ""
+    msg_title: str = ""
     # 新增的 RSS 文章对应的解析结果
     msg_contents: list[str] = field(default_factory=list)
     # 暂存单条 RSS 文章的解析结果
-    msg_buffer: str = ""
+    msg_text_buffer: str = ""
+    msg_image_buffer: str = ""
 
     # 当前正在解析的文章
-    entry: Any = None
+    entry: dict[str, Any] | None = None
 
     # 是否继续执行后续 handler
     continue_process: bool = True
 
     def flush_msg_buffer(self):
         """保存解析结果并清空缓冲区，为下次解析准备"""
-        if not self.msg_buffer:
+        content = self.msg_text_buffer + self.msg_image_buffer
+        if not content:
             logger.warning(f"对空缓冲区进行了刷新，该条 RSS 文章未被正确解析")
             return
-        self.msg_contents.append(self.msg_buffer)
-        self.msg_buffer = ""
+        self.msg_contents.append(content)
+        self.msg_text_buffer = ""
+        self.msg_image_buffer = ""
 
     def flush_msg_contents(self):
         """在消息发送结束后调用，清空已发送的消息内容"""
         self.msg_contents.clear()
 
-    "messages就是msg_contents,items不知道是什么意思"
     "messages就是msg_contents,items不知道是什么意思"

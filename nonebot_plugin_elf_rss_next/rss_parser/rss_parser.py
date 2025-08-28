@@ -132,7 +132,7 @@ class RSSParser:
         self.context.title = title
         self.context.entries = entries
         self.context.tinydb = db
-        self.context.msg_header = f"【{title}】更新了！"
+        self.context.msg_title = f"【{title}】更新了！"
 
         # RSS 解析预处理
         await self._preprocess()
@@ -159,5 +159,4 @@ class RSSParser:
         await _execute_handlers(self.process_handlers, self.context, self.rss)
 
     async def _postprocess(self):
-        await _execute_handlers(self.postprocess_handlers, self.context, self.rss)
         await _execute_handlers(self.postprocess_handlers, self.context, self.rss)

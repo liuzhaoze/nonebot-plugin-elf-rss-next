@@ -77,7 +77,7 @@ class RSS:
     # 图片数量限制，防止消息太长刷屏
     max_image_number: int = 0
     # 正文待移除内容，支持正则
-    content_to_remove: Optional[str] = None
+    content_to_remove: set[str] = field(default_factory=set)
     # HTTP ETag
     etag: Optional[str] = None
     # 上次更新时间
@@ -124,7 +124,8 @@ class RSS:
             else:
                 db.upsert(self.__dict__, Query().name == self.name)
 
-    def sanitize_name(self) -> str:
+    @property
+    def sanitized_name(self) -> str:
         """去除 RSS 订阅名中无法作为文件名的非法字符"""
         name = re.sub(r"[<>:\"/\\|?*]", "_", self.name)
         if name == "rss":

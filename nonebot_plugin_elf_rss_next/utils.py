@@ -63,7 +63,7 @@ async def extract_valid_group_id(bot: Bot, group_ids: set[int]) -> set[int]:
 
 
 def extract_entry_fields(entry: dict[str, Any]) -> dict[str, Any]:
-    """提取RSS条目中需要的字段"""
+    """提取RSS文章中需要的字段"""
     wanted = ["guid", "title", "link", "published", "updated", "hash"]
     if entry.get("to_send"):
         wanted += ["to_send", "content", "summary"]
@@ -71,7 +71,7 @@ def extract_entry_fields(entry: dict[str, Any]) -> dict[str, Any]:
 
 
 def get_entry_hash(entry: dict[str, Any]) -> str:
-    """计算RSS条目的哈希值"""
+    """计算RSS文章的哈希值"""
     unique_str = str(entry.get("guid", entry.get("link", "")))
     return hashlib.md5(unique_str.encode("utf-8")).hexdigest()
 

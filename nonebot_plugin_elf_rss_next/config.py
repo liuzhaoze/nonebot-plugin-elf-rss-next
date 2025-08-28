@@ -10,6 +10,14 @@ class ScopedConfig(BaseModel):
     proxy: Optional[AnyUrl] = None
     black_words: Optional[list[str]] = None
     cache_expire: int = 14
+    blockquote: bool = True
+    deepl_api_key: Optional[str] = None
+    baidu_id: Optional[str] = None
+    baidu_api_key: Optional[str] = None
+    single_detection_api_key: Optional[str] = None
+    image_compress_size: int = 2 * 1024
+    gif_compress_size: int = 6 * 1024
+    max_length: int = 500
 
 
 class Config(BaseModel):

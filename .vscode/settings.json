@@ -1,7 +1,13 @@
 {
     "cSpell.words": [
         "asyncache",
+        "cqcode",
+        "deepl",
+        "demojize",
         "dhash",
+        "emojize",
+        "ezgif",
+        "gifsicle",
         "KHTML",
         "localstore",
         "metaevent",
@@ -9,6 +15,7 @@
         "onebot",
         "pikpak",
         "pixiv",
+        "putpixel",
         "rsshub",
         "tinydb"
     ]
