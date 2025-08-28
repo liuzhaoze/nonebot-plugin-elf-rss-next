@@ -1,6 +1,9 @@
+import contextlib
 import hashlib
+from email.utils import parsedate_to_datetime
 from typing import Any, Optional
 
+import arrow
 from asyncache import cached
 from cachetools import TTLCache
 from nonebot import logger
@@ -71,3 +74,19 @@ def get_entry_hash(entry: dict[str, Any]) -> str:
     """计算RSS条目的哈希值"""
     unique_str = str(entry.get("guid", entry.get("link", "")))
     return hashlib.md5(unique_str.encode("utf-8")).hexdigest()
+
+
+def get_entry_datetime(entry: dict[str, Any]):
+    datetime = entry.get("published", entry.get("updated"))
+    if not datetime:
+        return arrow.now()
+
+    with contextlib.suppress(Exception):
+        datetime = parsedate_to_datetime(datetime)
+    return arrow.get(datetime)
+
+
+def chunk_list(lst: list[Any], chunk_size: int):
+    """将列表分块"""
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i : i + chunk_size]

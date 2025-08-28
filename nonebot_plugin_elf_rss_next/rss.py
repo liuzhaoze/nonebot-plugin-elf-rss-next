@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import aiohttp
 import feedparser
@@ -17,6 +17,7 @@ require("nonebot_plugin_localstore")
 import nonebot_plugin_localstore as store
 
 from .globals import global_config, plugin_config
+from .rss_parser import RSSParser
 from .utils import (
     extract_entry_fields,
     extract_valid_group_id,
@@ -53,26 +54,26 @@ class RSS:
     frequency: str = "5"
     # 是否启用翻译
     translation: bool = False
-    # 仅标题
-    only_title: bool = False
-    # 仅图片
-    only_pic: bool = False
-    # 仅含有图片
-    only_has_pic: bool = False
+    # 仅推送标题
+    only_feed_title: bool = False
+    # 仅推送图片
+    only_feed_pic: bool = False
     # 是否下载图片
     download_pic: bool = False
     # Cookies
     cookie: str = ""
     # 是否下载种子
     download_torrent: bool = False
-    # 过滤关键字，支持正则
-    download_torrent_keyword: str = ""
+    # 白名单关键词
+    white_list_keyword: str = ""
     # 黑名单关键词
     black_list_keyword: str = ""
     # 是否上传到群
     upload_to_group: bool = True
     # 去重模式
-    duplicate_filter_mode: list[str] = field(default_factory=list)
+    deduplication_modes: set[Literal["title", "link", "image", "or"]] = field(
+        default_factory=set
+    )
     # 图片数量限制，防止消息太长刷屏
     max_image_number: int = 0
     # 正文待移除内容，支持正则
@@ -212,7 +213,7 @@ class RSS:
             logger.info(f"{self._log_prefix}首次抓取成功，更新推送已就绪")
             return
 
-        # TODO: 解析更新并发送通知
+        await RSSParser(rss=self).parse(data)
 
     async def fetch(self) -> tuple[dict[str, Any], bool]:
         """抓取 RSS 内容"""
