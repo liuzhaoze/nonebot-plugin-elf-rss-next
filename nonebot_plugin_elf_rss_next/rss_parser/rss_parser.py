@@ -36,7 +36,7 @@ class ParsingHandler:
 
     def __lt__(self, other: "ParsingHandler") -> bool:
         if not isinstance(other, ParsingHandler):
-            return NotImplementedError
+            raise NotImplementedError
         return self.priority < other.priority
 
 

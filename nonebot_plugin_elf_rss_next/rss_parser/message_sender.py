@@ -65,7 +65,7 @@ async def send_message(
     success = False
     if user_id:
         success |= any(
-            asyncio.gather(
+            await asyncio.gather(
                 *[
                     send_message_with_lock(bot, uid, "private", wrapped_msg)
                     for uid in user_id
@@ -74,7 +74,7 @@ async def send_message(
         )
     if group_id:
         success |= any(
-            asyncio.gather(
+            await asyncio.gather(
                 *[
                     send_message_with_lock(bot, gid, "group", wrapped_msg)
                     for gid in group_id

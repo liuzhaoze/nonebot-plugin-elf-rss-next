@@ -95,11 +95,15 @@ async def get_image_hash(url: str, use_proxy: bool) -> Optional[str]:
 
 
 @retry(stop=(stop_after_attempt(5) | stop_after_delay(30)))
-async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
+async def resize_gif(
+    url: str, use_proxy: bool, resize_ratio: int = 2
+) -> Optional[bytes]:
     """通过 ezgif 压缩 GIF"""
     async with aiohttp.ClientSession() as session:
         resp = await session.post(
-            "https://s3.ezgif.com/resize", data={"new-image-url": url}
+            "https://s3.ezgif.com/resize",
+            data={"new-image-url": url},
+            proxy=(plugin_config.proxy if use_proxy else None),
         )
         d = pq(await resp.text())
         next_url = d("form").attr("action")
@@ -116,13 +120,20 @@ async def resize_gif(url: str, resize_ratio: int = 2) -> Optional[bytes]:
             "method": "gifsicle",
             "ar": "force",
         }
-        resp = await session.post(next_url, params="ajax=true", data=data)
+        resp = await session.post(
+            next_url,
+            params="ajax=true",
+            data=data,
+            proxy=(plugin_config.proxy if use_proxy else None),
+        )
         d = pq(await resp.text())
         output_img_url = "https:" + d("img:nth-child(1)").attr("src")
-        return await download_image(output_img_url)
+        return await download_image(output_img_url, use_proxy)
 
 
-async def compress_image(url: URL, content: bytes):
+async def compress_image(
+    url: URL, content: bytes, use_proxy: bool
+) -> Optional[Union[Image.Image, bytes]]:
     try:
         image = Image.open(BytesIO(content))
     except UnidentifiedImageError:
@@ -133,6 +144,7 @@ async def compress_image(url: URL, content: bytes):
         if image.format == "WEBP":
             with BytesIO() as output:
                 image.save(output, "PNG")
+                output.seek(0)
                 image = Image.open(output)
         # 降低图片分辨率
         image.thumbnail(
@@ -148,7 +160,7 @@ async def compress_image(url: URL, content: bytes):
     else:
         if len(content) > plugin_config.gif_compress_size * 1024:
             try:
-                return await resize_gif(url)
+                return await resize_gif(str(url), use_proxy)
             except RetryError:
                 logger.error(f"GIF压缩失败，将发送原图")
         return content
@@ -190,7 +202,7 @@ async def get_image_cqcode(
         except Exception as e:
             logger.warning(f"保存图片至本地时出现错误: {e}")
 
-    compressed_content = await compress_image(url, content)
+    compressed_content = await compress_image(url, content, use_proxy)
     if not compressed_content:
         return missing_image_msg
 

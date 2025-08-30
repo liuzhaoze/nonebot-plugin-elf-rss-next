@@ -275,8 +275,7 @@ async def translate_message(ctx: Context, rss: RSS):
     """翻译消息"""
     if rss.translation:
         translated = await translate(ctx.msg_text_buffer, rss.use_proxy)
-
-    ctx.msg_text_buffer += "\n\n" + translated
+        ctx.msg_text_buffer += "\n\n" + translated
 
 
 @ParsingHandlerManager.process_handler(priority=70)

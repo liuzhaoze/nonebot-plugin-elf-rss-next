@@ -159,7 +159,7 @@ class RSS:
 
         # 抓取 RSS 订阅数据
         data, cached = await self.fetch()
-        rss_entries_file = store.get_plugin_data_file(f"{self.sanitize_name()}.json")
+        rss_entries_file = store.get_plugin_data_file(f"{self.sanitized_name}.json")
         initial_fetch = not rss_entries_file.exists()
 
         if cached:
@@ -266,7 +266,7 @@ class RSS:
 
     async def fetch_fallback(
         self, session: aiohttp.ClientSession, proxy: Optional[str]
-    ) -> tuple[dict[str, Any]]:
+    ) -> dict[str, Any]:
         """使用备用 RSSHub 地址抓取 RSS"""
         data = {}
         for fallback_url in plugin_config.rsshub_fallback_urls:
