@@ -21,6 +21,12 @@
 |     70      |      添加文章链接      |
 |     71      |      添加文章时间      |
 |     100     |      创建下载任务      |
+
+## 后处理
+|   优先级    |      步骤      |
+|-------------|----------------|
+| 50 (默认值) |    发送消息    |
+|     100     | 关闭数据库连接 |
 """
 
 import re
@@ -40,10 +46,15 @@ from ..globals import plugin_config
 from ..rss import RSS
 from ..utils import get_entry_datetime, get_entry_hash
 from . import rss_entries_file_operations as FileIO
-from .cache_db_manager import initialize_cache_db, is_entry_duplicated
+from .cache_db_manager import (
+    initialize_cache_db,
+    insert_into_cache_db,
+    is_entry_duplicated,
+)
 from .context import Context
 from .html_document_processor import handle_html_tags
 from .image_processor import get_image_cqcode
+from .message_sender import send_message
 from .rss_parser import ParsingHandlerManager, RSSParser
 from .translation import translate
 from .utils import get_summary
@@ -294,3 +305,74 @@ async def create_download_task(ctx: Context, rss: RSS):
     # 上传到 rss.group_id 中的所有群
     # 是否还要添加 rss.update_to_user 上传给 rss.user_id 中的用户？
     return
+
+
+@ParsingHandlerManager.postprocess_handler()
+async def send_messages(ctx: Context, rss: RSS):
+    if not ctx.msg_contents:
+        logger.info(f"[{rss.name}]没有新推送")
+        return
+
+    success = False
+
+    if rss.send_merged_msg:
+        # 发送合并转发消息
+        msgs_to_send = [ctx.msg_title + "\n\n" + c for c in ctx.msg_contents.values()]
+        success |= await send_message(rss.user_id, rss.group_id, msgs_to_send)
+        if success:
+            for entry in ctx.new_entries:
+                if rss.deduplication_modes:
+                    # 将已发送的条目写入去重数据库
+                    insert_into_cache_db(ctx.conn, entry)
+                if entry.get("to_send"):
+                    # 移除待发送标记
+                    entry.pop("to_send")
+                # 更新 rss entries file
+                FileIO.write_entry(ctx.tinydb, entry)
+        else:
+            logger.warning(f"[{rss.name}]发送合并消息失败，将使用逐条发送")
+            for entry in ctx.new_entries:
+                entry["to_send"] = True
+            ctx.msg_error_count += len(ctx.msg_contents)
+
+    new_entries_hash_index_map = {e["hash"]: i for i, e in enumerate(ctx.new_entries)}
+    if not success:
+        for entry_hash, content in ctx.msg_contents.items():
+            # 逐条发送消息
+            entry = ctx.new_entries[new_entries_hash_index_map[entry_hash]]
+            msg_to_send = ctx.msg_title + "\n\n" + content
+            success |= await send_message(rss.user_id, rss.group_id, msg_to_send)
+            if success:
+                if rss.deduplication_modes:
+                    # 将已发送的条目写入去重数据库
+                    insert_into_cache_db(ctx.conn, entry)
+                if entry.get("to_send"):
+                    # 移除待发送标记
+                    entry.pop("to_send")
+            else:
+                entry["to_send"] = True
+                ctx.msg_error_count += 1
+            # 更新 rss entries file
+            FileIO.write_entry(ctx.tinydb, entry)
+
+    FileIO.truncate_file(ctx.tinydb, len(ctx.new_entries))
+
+    if success:
+        logger.info(
+            f"[{rss.name}]推送成功"
+            + (f"，失败{ctx.msg_error_count}次" if ctx.msg_error_count else "")
+        )
+    else:
+        logger.error(f"[{rss.name}]推送失败，共失败{ctx.msg_error_count}次")
+
+
+@ParsingHandlerManager.postprocess_handler(priority=100)
+async def close_db_connection(ctx: Context, rss: RSS):
+    """关闭数据库连接"""
+    if ctx.conn:
+        ctx.conn.close()
+        ctx.conn = None
+
+    if ctx.tinydb:
+        ctx.tinydb.close()
+        ctx.tinydb = None

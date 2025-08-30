@@ -18,6 +18,7 @@ class ScopedConfig(BaseModel):
     image_compress_size: int = 2 * 1024
     gif_compress_size: int = 6 * 1024
     max_length: int = 500
+    rss_entries_file_limit: int = 200
 
 
 class Config(BaseModel):

@@ -15,8 +15,8 @@ def initialize_cache_db(conn: Connection) -> None:
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS main (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "link" TEXT,
     "title" TEXT,
+    "link" TEXT,
     "image_hash" TEXT,
     "datetime" TEXT DEFAULT (DATETIME('Now', 'LocalTime'))
 );"""
@@ -39,9 +39,9 @@ async def is_entry_duplicated(
     deduplication_modes: set[Literal["title", "link", "image", "or"]],
     use_proxy: bool,
 ) -> bool:
-    link = entry["link"].replace("'", "''")
-    title = entry["title"].replace("'", "''")
     cursor = conn.cursor()
+    title = entry["title"]
+    link = entry["link"]
 
     try:
         sql_conditions = []
@@ -74,6 +74,7 @@ async def is_entry_duplicated(
                     if image_hash:
                         sql_conditions.append("image_hash=?")
                         sql_args.append(image_hash)
+                        entry["image_hash"] = image_hash
 
         # 如果没有有效条件，直接返回 False
         if not sql_conditions:
@@ -101,3 +102,16 @@ async def is_entry_duplicated(
 
     finally:
         cursor.close()
+
+
+def insert_into_cache_db(conn: Connection, entry: dict[str, Any]) -> None:
+    cursor = conn.cursor()
+    title = entry["title"]
+    link = entry["link"]
+    image_hash = entry.get("image_hash")
+    cursor.execute(
+        "INSERT INTO main (title, link, image_hash) VALUES (?, ?, ?);",
+        (title, link, image_hash),
+    )
+    cursor.close()
+    conn.commit()
