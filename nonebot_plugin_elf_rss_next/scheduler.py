@@ -18,7 +18,7 @@ async def check_rss_update(rss: RSS):
     try:
         second = 1.0
         async with timeout(30 * second):
-            await TODO: 获取RSS更新
+            await rss.update()
     except asyncio.TimeoutError:
         logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
 
