@@ -299,16 +299,6 @@ async def note_datetime(ctx: Context, rss: "RSS"):
     ctx.msg_text_buffer += f"\n日期：{datetime.format('YYYY年MM月DD日 HH:mm:ss')}"
 
 
-@ParsingHandlerManager.process_handler(priority=100)
-async def create_download_task(ctx: Context, rss: "RSS"):
-    """创建下载任务"""
-    # TODO: 创建 QBittorrent 和 PikPak 下载任务
-    # 通过 rss.upload_to_group 控制下载完成后是否上传到群文件
-    # 上传到 rss.group_id 中的所有群
-    # 是否还要添加 rss.update_to_user 上传给 rss.user_id 中的用户？
-    return
-
-
 @ParsingHandlerManager.postprocess_handler()
 async def send_messages(ctx: Context, rss: "RSS"):
     if not ctx.msg_contents:

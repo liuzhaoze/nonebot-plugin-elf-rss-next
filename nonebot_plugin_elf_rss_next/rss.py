@@ -60,16 +60,12 @@ class RSS:
     only_feed_pic: bool = False
     # 是否下载图片
     download_pic: bool = False
-    # Cookies
+    # 获取订阅更新时使用的 cookie
     cookie: str = ""
-    # 是否下载种子
-    download_torrent: bool = False
     # 白名单关键词
     white_list_keyword: str = ""
     # 黑名单关键词
     black_list_keyword: str = ""
-    # 是否上传到群
-    upload_to_group: bool = True
     # 去重模式
     deduplication_modes: set[Literal["title", "link", "image", "or"]] = field(
         default_factory=set
@@ -78,20 +74,16 @@ class RSS:
     max_image_number: int = 0
     # 正文待移除内容，支持正则
     content_to_remove: set[str] = field(default_factory=set)
+    # 当一次更新多条消息时，是否尝试发送合并消息
+    send_merged_msg: bool = False
+    # 停止更新
+    stop: bool = False
     # HTTP ETag
     etag: Optional[str] = None
     # 上次更新时间
     last_modified: Optional[str] = None
     # 连续抓取失败的次数，超过 100 就停止更新
     error_count: int = 0
-    # 停止更新
-    stop: bool = False
-    # 是否启用 PikPak 离线下载
-    pikpak_offline: bool = False
-    # PikPak 离线下载路径匹配正则表达式，用于自动归档文件，例如: r"(?:\[.*?\][\s\S])([\s\S]*)[\s\S]-"
-    pikpak_path_key: str = ""
-    # 当一次更新多条消息时，是否尝试发送合并消息
-    send_merged_msg: bool = False
 
     def __post_init__(self):
         self._log_prefix = f"[RSS: {self.name}]"
@@ -103,11 +95,65 @@ class RSS:
         if not DB_FILE.exists():
             return []
 
+        rss_list = []
         with TinyDB(
             DB_FILE, encoding="utf-8", sort_keys=True, indent=4, ensure_ascii=False
         ) as db:
-            rss_list = [RSS(**item) for item in db.all()]
-            return rss_list
+            for item in db.all():
+                if isinstance(item.get("url"), str):
+                    item["url"] = URL(item["url"])
+                if isinstance(item.get("user_id"), list):
+                    item["user_id"] = set(item["user_id"])
+                if isinstance(item.get("group_id"), list):
+                    item["group_id"] = set(item["group_id"])
+                if isinstance(item.get("deduplication_modes"), list):
+                    item["deduplication_modes"] = set(item["deduplication_modes"])
+                if isinstance(item.get("content_to_remove"), list):
+                    item["content_to_remove"] = set(item["content_to_remove"])
+                rss_list.append(RSS(**item))
+        return rss_list
+
+    @staticmethod
+    def get_by_name(name: str) -> Optional["RSS"]:
+        """通过订阅名获取RSS数据"""
+        all_rss = RSS.load_rss_data()
+        return next((rss for rss in all_rss if rss.name == name), None)
+
+    def add_subscriber(
+        self, *, user_id: Optional[int] = None, group_id: Optional[int] = None
+    ):
+        """添加订阅者"""
+        if user_id:
+            self.user_id.add(user_id)
+        if group_id:
+            self.group_id.add(group_id)
+        self.upsert()
+
+    def remove_subscriber(
+        self, *, user_id: Optional[int] = None, group_id: Optional[int] = None
+    ) -> bool:
+        """移除订阅者"""
+        if user_id and user_id not in self.user_id:
+            return False
+        if group_id and group_id not in self.group_id:
+            return False
+        if user_id:
+            self.user_id.remove(user_id)
+        if group_id:
+            self.group_id.remove(group_id)
+        self.upsert()
+        return True
+
+    def destroy(self):
+        """删除整个RSS订阅"""
+        with TinyDB(
+            DB_FILE, encoding="utf-8", sort_keys=True, indent=4, ensure_ascii=False
+        ) as db:
+            db.remove(Query().name == self.name)
+        # 删除 rss entries file
+        store.get_plugin_data_file(f"{self.sanitized_name}.json").unlink(
+            missing_ok=True
+        )
 
     def upsert(self, old_name: Optional[str] = None):
         """
@@ -116,13 +162,21 @@ class RSS:
         Args:
             old_name (Optional[str]): 在修改订阅名称时使用 (因为修改订阅名称后，无法通过内存中的新名称找到数据库中原来的记录)
         """
+        # 将公有属性转换成可以 JSON 序列化的类型
+        data = {k: v for k, v in self.__dict__.copy().items() if not k.startswith("_")}
+        data["url"] = str(self.url)
+        data["user_id"] = list(self.user_id)
+        data["group_id"] = list(self.group_id)
+        data["deduplication_modes"] = list(self.deduplication_modes)
+        data["content_to_remove"] = list(self.content_to_remove)
+
         with TinyDB(
             DB_FILE, encoding="utf-8", sort_keys=True, indent=4, ensure_ascii=False
         ) as db:
             if old_name:
-                db.update(self.__dict__, Query().name == old_name)
+                db.update(data, Query().name == old_name)
             else:
-                db.upsert(self.__dict__, Query().name == self.name)
+                db.upsert(data, Query().name == self.name)
 
     @property
     def sanitized_name(self) -> str:

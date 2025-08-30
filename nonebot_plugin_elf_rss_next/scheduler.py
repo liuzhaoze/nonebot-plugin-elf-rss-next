@@ -23,11 +23,16 @@ async def check_rss_update(rss: RSS):
         logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
 
 
-async def create_rss_update_job(rss: RSS):
-    """创建检查RSS更新定时任务"""
-    # 删除已存在的重名任务
+def remove_rss_update_job(rss: RSS):
+    """删除检查RSS更新定时任务"""
     if scheduler.get_job(rss.name):
         scheduler.remove_job(rss.name)
+
+
+async def create_rss_update_job(rss: RSS):
+    """创建检查RSS更新定时任务"""
+    # 删除旧定时任务
+    remove_rss_update_job(rss)
 
     # 确保用户、群组两个订阅目标至少有一个
     if not any([rss.user_id, rss.group_id]):

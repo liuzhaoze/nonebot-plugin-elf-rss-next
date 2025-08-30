@@ -4,6 +4,7 @@ from nonebot import logger, on_metaevent
 from nonebot.adapters.onebot.v11 import Bot
 from nonebot.plugin import PluginMetadata
 
+from . import commands
 from .config import Config
 from .globals import global_config
 from .rss import DB_FILE, RSS
@@ -13,7 +14,7 @@ from .utils import send_msg_to_superusers
 __plugin_meta__ = PluginMetadata(
     name="ELF_RSS Next",
     description="RSS订阅机器人“ELF_RSS”的独立插件版本",
-    usage="TODO:",
+    usage="https://github.com/liuzhaoze/nonebot-plugin-elf-rss-next/blob/main/README.md",
     type="application",
     homepage="https://github.com/liuzhaoze/nonebot-plugin-elf-rss-next",
     config=Config,
@@ -30,7 +31,7 @@ async def startup_handler(bot: Bot):
     rss_list = RSS.load_rss_data()
 
     if len(rss_list) == 0:
-        msg = "尚无订阅数据，配置和使用方法参照: TODO:"
+        msg = "尚无订阅数据，配置和使用方法参见：https://github.com/liuzhaoze/nonebot-plugin-elf-rss-next"
         logger.warning(msg)
         await send_msg_to_superusers(bot, global_config.superusers, msg)
     else:

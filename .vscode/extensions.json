@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "ms-python.black-formatter",
+        "streetsidesoftware.code-spell-checker",
+        "ms-python.isort",
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.vscode-python-envs"
+    ]
+}
