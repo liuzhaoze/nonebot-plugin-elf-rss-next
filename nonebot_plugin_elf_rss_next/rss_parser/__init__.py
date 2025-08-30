@@ -32,6 +32,7 @@
 import re
 import sqlite3
 from difflib import SequenceMatcher
+from typing import TYPE_CHECKING
 
 import arrow
 import emoji
@@ -42,8 +43,10 @@ from yarl import URL
 require("nonebot_plugin_localstore")
 import nonebot_plugin_localstore as store
 
+if TYPE_CHECKING:
+    from ..rss import RSS
+
 from ..globals import plugin_config
-from ..rss import RSS
 from ..utils import get_entry_datetime, get_entry_hash
 from . import rss_entries_file_operations as FileIO
 from .cache_db_manager import (
@@ -63,7 +66,7 @@ __all__ = ["RSSParser"]
 
 
 @ParsingHandlerManager.preprocess_handler(priority=20)
-async def find_new_entries(ctx: Context, rss: RSS):
+async def find_new_entries(ctx: Context, rss: "RSS"):
     """预处理第 1 步：找到新增的文章"""
     db = ctx.tinydb
     old_entry_hashes = {entry.get("hash") for entry in db.all()}
@@ -78,7 +81,7 @@ async def find_new_entries(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.preprocess_handler(priority=21)
-async def filter_invalid_entries(ctx: Context, rss: RSS):
+async def filter_invalid_entries(ctx: Context, rss: "RSS"):
     """预处理第 2 步：过滤非法文章"""
     filtered_entries = []
 
@@ -119,7 +122,7 @@ async def filter_invalid_entries(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.preprocess_handler(priority=22)
-async def filter_duplicate_entries(ctx: Context, rss: RSS):
+async def filter_duplicate_entries(ctx: Context, rss: "RSS"):
     """预处理第 3 步：过滤已经发送过的重复文章"""
     if not rss.deduplication_modes:
         return
@@ -145,7 +148,7 @@ async def filter_duplicate_entries(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=0)
-async def validate_entry(ctx: Context, rss: RSS):
+async def validate_entry(ctx: Context, rss: "RSS"):
     """检查当前处理的文章是否有效"""
     if not ctx.entry:
         logger.error(f"[{rss.name}]未能正确装填待处理的文章，终止后续处理")
@@ -153,7 +156,7 @@ async def validate_entry(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=20)
-async def handle_entry_title(ctx: Context, rss: RSS):
+async def handle_entry_title(ctx: Context, rss: "RSS"):
     """处理文章标题"""
     if rss.only_feed_pic:
         # 仅推送图片模式下不处理标题
@@ -189,7 +192,7 @@ async def handle_entry_title(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=40)
-async def handle_images(ctx: Context, rss: RSS):
+async def handle_images(ctx: Context, rss: "RSS"):
     """处理文章图片"""
     if rss.only_feed_title:
         # 仅推送标题模式下不处理图片
@@ -235,14 +238,14 @@ async def handle_images(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=49)
-async def decide_whether_handle_summary(ctx: Context, rss: RSS):
+async def decide_whether_handle_summary(ctx: Context, rss: "RSS"):
     """决定是否处理正文"""
     if rss.only_feed_title or rss.only_feed_pic:
         ctx.continue_process = False
 
 
 @ParsingHandlerManager.process_handler()
-async def handle_summary(ctx: Context, rss: RSS):
+async def handle_summary(ctx: Context, rss: "RSS"):
     """处理文章正文"""
     entry = ctx.entry
 
@@ -256,7 +259,7 @@ async def handle_summary(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=60)
-async def remove_unwanted_content(ctx: Context, rss: RSS):
+async def remove_unwanted_content(ctx: Context, rss: "RSS"):
     """移除指定内容"""
     article = emoji.demojize(ctx.msg_text_buffer)
     if rss.content_to_remove:
@@ -271,7 +274,7 @@ async def remove_unwanted_content(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=61)
-async def translate_message(ctx: Context, rss: RSS):
+async def translate_message(ctx: Context, rss: "RSS"):
     """翻译消息"""
     if rss.translation:
         translated = await translate(ctx.msg_text_buffer, rss.use_proxy)
@@ -279,13 +282,13 @@ async def translate_message(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=70)
-async def note_link(ctx: Context, rss: RSS):
+async def note_link(ctx: Context, rss: "RSS"):
     """添加文章链接"""
     ctx.msg_text_buffer += f"\n\n链接：{ctx.entry.get('link', '无链接')}"
 
 
 @ParsingHandlerManager.process_handler(priority=71)
-async def note_datetime(ctx: Context, rss: RSS):
+async def note_datetime(ctx: Context, rss: "RSS"):
     """添加文章时间"""
     datetime = get_entry_datetime(ctx.entry)
     datetime = (
@@ -297,7 +300,7 @@ async def note_datetime(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.process_handler(priority=100)
-async def create_download_task(ctx: Context, rss: RSS):
+async def create_download_task(ctx: Context, rss: "RSS"):
     """创建下载任务"""
     # TODO: 创建 QBittorrent 和 PikPak 下载任务
     # 通过 rss.upload_to_group 控制下载完成后是否上传到群文件
@@ -307,7 +310,7 @@ async def create_download_task(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.postprocess_handler()
-async def send_messages(ctx: Context, rss: RSS):
+async def send_messages(ctx: Context, rss: "RSS"):
     if not ctx.msg_contents:
         logger.info(f"[{rss.name}]没有新推送")
         return
@@ -366,7 +369,7 @@ async def send_messages(ctx: Context, rss: RSS):
 
 
 @ParsingHandlerManager.postprocess_handler(priority=100)
-async def close_db_connection(ctx: Context, rss: RSS):
+async def close_db_connection(ctx: Context, rss: "RSS"):
     """关闭数据库连接"""
     if ctx.conn:
         ctx.conn.close()

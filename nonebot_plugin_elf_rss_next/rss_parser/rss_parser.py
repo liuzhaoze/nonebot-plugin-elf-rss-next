@@ -1,5 +1,5 @@
 import re
-from typing import Any, Awaitable, Callable
+from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
 from nonebot import require
 from tinydb import TinyDB
@@ -7,11 +7,13 @@ from tinydb import TinyDB
 require("nonebot_plugin_localstore")
 import nonebot_plugin_localstore as store
 
-from ..rss import RSS
+if TYPE_CHECKING:
+    from ..rss import RSS
+
 from ..utils import chunk_list
 from .context import Context
 
-TParsingHandlerFunc = Callable[[Context, RSS], Awaitable[None]]
+TParsingHandlerFunc = Callable[[Context, "RSS"], Awaitable[None]]
 
 
 class ParsingHandler:
@@ -93,7 +95,7 @@ def _filter_handlers(handlers: list[ParsingHandler], url: str) -> list[ParsingHa
     return [h for h in tmp if (h.func.__name__, h.pattern, h.priority) not in to_remove]
 
 
-async def _execute_handlers(handlers: list[ParsingHandler], ctx: Context, rss: RSS):
+async def _execute_handlers(handlers: list[ParsingHandler], ctx: Context, rss: "RSS"):
     for h in handlers:
         await h.func(ctx, rss)
         if h.halt or not ctx.continue_process:
@@ -101,7 +103,7 @@ async def _execute_handlers(handlers: list[ParsingHandler], ctx: Context, rss: R
 
 
 class RSSParser:
-    def __init__(self, rss: RSS):
+    def __init__(self, rss: "RSS"):
         self.rss: RSS = rss
         self.context: Context = Context()  # 解析 RSS 过程中的上下文
         self.preprocess_handlers = _filter_handlers(
