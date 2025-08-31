@@ -26,8 +26,10 @@ jobs:
     - name: Get version
       id: version
       run: |
-        echo "PROJECT_VERSION=$(uv version --short)" >> $GITHUB_OUTPUT
-        echo "TAG_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        PROJECT_VERSION=$(uv version --short)
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+        echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
         echo "Project version: $PROJECT_VERSION"
         echo "Tag version: $TAG_VERSION"
 
